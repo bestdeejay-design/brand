@@ -1,0 +1,56 @@
+{
+  "_comment": "Канон айдентики зоопарка, v1.0.0 от 2026-10-16. Источник правил — CONCEPT.md. Значения UI вычитаны из dajet-player/docs/BRAND.md, значения знака — из reference/player-icon-wave/icon.svg.",
+  "version": "1.0.0",
+
+  "icon": {
+    "plate": "#15181C",
+    "mark": "#E8AE8C",
+    "colors_total": 2,
+    "forbidden": ["gradients", "shadows", "glows", "transparency", "outlines"]
+  },
+
+  "geometry": {
+    "canvas": 1024,
+    "body": 824,
+    "corner": {
+      "type": "superellipse",
+      "n": 5,
+      "factor": 0.2253,
+      "applied_to": 824
+    },
+    "linear_stroke": 74,
+    "stroke_cap": "round",
+    "legibility_check_px": 16
+  },
+
+  "icns": {
+    "source": "vector only",
+    "records": [
+      "16x16", "16x16@2x",
+      "32x32", "32x32@2x",
+      "128x128", "128x128@2x",
+      "256x256", "256x256@2x",
+      "512x512", "512x512@2x"
+    ],
+    "small_sizes_hand_redrawn": false
+  },
+
+  "ui": {
+    "ground_dark": "#15181C",
+    "surface_dark": "#1E2227",
+    "text_dark": "#F4F1E8",
+    "text_secondary_dark": "#A8A29E",
+    "accent": "#E8AE8C",
+    "accent_service_on_light": "#7A3B26",
+    "accent_service_note": "не брендовый цвет: только для контраста текста и фокуса на светлом фоне"
+  },
+
+  "signs": {
+    "dajet-player": { "mark": "wave", "status": "done", "note": "эталон серии; в .icns починить записи 16 и 32" },
+    "dajet-editor": { "mark": "headphones", "status": "todo" },
+    "dajet-browser": { "mark": "D-aperture", "status": "needs_plate_change", "note": "плита белая → #15181C, знак #171A1E → #E8AE8C" },
+    "kiwi-cat": { "mark": "cat", "status": "needs_plate_change", "exception": "персонаж: многоцветный по замыслу" },
+    "watermelon-cat": { "mark": "cat", "status": "needs_plate_change", "exception": "персонаж: многоцветный по замыслу" },
+    "joer": { "mark": "equalizer", "status": "pull_into_series", "note": "плита #15181C и акцент #E8AE8C; убрать градиент #8b7cf6→#5eead4 и радиальное гало" }
+  }
+}

@@ -1,0 +1,12 @@
+# Рабочие материалы разбора — остаются локально, в канон не идут.
+# Индекс того, что здесь лежит: SURVEY.md
+systems/
+findings/
+acceptance/
+icons/
+OVERVIEW.png
+INVENTORY.md
+FINDINGS.md
+SURVEY.md
+reference/gemini-brand-overview.jpeg
+.DS_Store
