@@ -10,3 +10,6 @@ FINDINGS.md
 SURVEY.md
 reference/gemini-brand-overview.jpeg
 .DS_Store
+
+# Dependencies for the reproducible editor-icon tooling.
+node_modules/
