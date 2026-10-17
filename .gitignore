@@ -10,3 +10,6 @@ FINDINGS.md
 SURVEY.md
 reference/gemini-brand-overview.jpeg
 .DS_Store
+
+# Инструменты сборки иконок.
+node_modules/
