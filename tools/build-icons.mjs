@@ -16,13 +16,14 @@
 // Перед сборкой вектор проходит линт по канону (ровно два цвета, никаких
 // градиентов, теней и прозрачности, штрих 74 с круглыми концами). Знак, который
 // канону не соответствует, не собирается: чтобы его всё-таки собрать, нужен
-// явный ключ и `--force`.
+// `--force`. Плита (канва 1024, тело 824, по центру) обязательна всегда: `--force`
+// её не отменяет — без неё это не знак, а картинка.
 
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 
-import { CANON, ICNS_RECORDS, PLATE_BOX, REPO_ROOT, SIGNS_DIR, listSigns } from './lib/canon.mjs'
+import { CANON, ICNS_RECORDS, PLATE_BOX, SIGNS_DIR, listSigns } from './lib/canon.mjs'
 import { writeIcns } from './lib/icns.mjs'
 import { plateBox } from './lib/pixels.mjs'
 import { magnify, readPixels, renderSvg } from './lib/render.mjs'
@@ -51,7 +52,7 @@ function buildSign(key) {
   const svg = fs.readFileSync(svgPath, 'utf8')
 
   const lint = lintSvg(svg)
-  if (!lint.ok) {
+  if (!lint.ok && !force) {
     return { key, ok: false, stage: 'lint', lint }
   }
 
@@ -116,6 +117,11 @@ for (const key of keys) {
   const result = buildSign(key)
 
   if (result.ok) {
+    if (result.lint && !result.lint.ok) {
+      // собрано принудительно: канон нарушен, но это решение владельца
+      console.error(`\n! ${key}: собрано принудительно, канон нарушен — ${result.lint.errors.join('; ')}`)
+      console.error(`  check-icons.mjs такой знак не пропустит.`)
+    }
     log(`\n✓ ${key}`)
     for (const [name, buffer] of result.files) {
       log(`  ${name.padEnd(16)} ${String(buffer.length).padStart(7)} Б  sha256:${sha256(buffer)}`)
@@ -138,6 +144,7 @@ for (const key of keys) {
 
   if (result.stage === 'plate') {
     console.error(`\n✗ ${key}: ${result.error}`)
+    console.error(`  Плита — часть канона, --force её не отменяет.`)
     failed++
     continue
   }

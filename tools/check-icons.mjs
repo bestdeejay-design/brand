@@ -45,7 +45,7 @@ function pngSize(data) {
   return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) }
 }
 
-/** Карта покрытия: 0 — плита, 1 — знак, -1 — прозрачно, -2 — чужой цвет. */
+/** Среднее и максимальное расхождение двух карт покрытия. */
 function compareCoverage(a, b) {
   if (a.width !== b.width || a.height !== b.height) return { mean: 1, max: 1 }
   let sum = 0
@@ -69,8 +69,6 @@ function compareCoverage(a, b) {
   }
   return { mean: n === 0 ? 0 : sum / n, max }
 }
-
-function plateBoxUnused() {}
 
 // --- проверка одного файла --------------------------------------------------
 
