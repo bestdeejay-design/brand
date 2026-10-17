@@ -37,6 +37,78 @@ const FORBIDDEN_ATTRS = {
 const ATTR_RE = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"/g
 const TAG_RE = /<([a-zA-Z][a-zA-Z0-9:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)\/?>/g
 
+/**
+ * Длина в пользовательских единицах: `92`, `92.5`, `1e2`, `92px`, `50%`.
+ *
+ * Проценты — от той стороны, которой радиус принадлежит (`rx` — от ширины,
+ * `ry` — от высоты), как в SVG. Распознать значение не удалось — возвращаем
+ * `null`: пусть такие файлы разбирают глазами, а не линт с ложной ошибкой.
+ */
+function lengthAttr(value, base) {
+  if (value === undefined) return null
+  const v = value.trim()
+  if (v.endsWith('%')) {
+    const n = Number(v.slice(0, -1))
+    return Number.isFinite(n) && Number.isFinite(base) ? (n / 100) * base : null
+  }
+  const n = Number(v.replace(/px$/i, ''))
+  return Number.isFinite(n) ? n : null
+}
+
+const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(4))
+
+/**
+ * Радиусы скругления `<rect>`.
+ *
+ * По SVG радиус не может быть отрицательным (такое значение невалидно:
+ * рендерер его обнуляет, и прямоугольник остаётся с острыми углами) и не может
+ * быть больше половины стороны, которую он скругляет (такое значение молча
+ * ужимается). И то и другое — тихая подмена геометрии: в файле написано одно,
+ * на экране выходит другое. Именно так знак редактора и превратился в арку:
+ * у чашек стоял `rx="-44.7379"`, и обе чашки отрисовались прямоугольниками.
+ */
+export function rectRadiusIssues(attrs) {
+  const issues = []
+  const width = lengthAttr(attrs.width, undefined)
+  const height = lengthAttr(attrs.height, undefined)
+
+  // `rx` и `ry` подставляются друг за друга, если задан только один из них
+  // (тогда радиус один и тот же по обеим осям); процент берётся от своей
+  // стороны: `rx` — от ширины, `ry` — от высоты. Претензии пишем к тому
+  // атрибуту, который реально стоит в файле, — по одному разу на атрибут.
+  const written = ['rx', 'ry']
+    .filter((name) => attrs[name] !== undefined)
+    .map((name) => ({
+      name,
+      raw: attrs[name],
+      value: lengthAttr(attrs[name], name === 'rx' ? width : height),
+    }))
+
+  for (const { name, raw, value } of written) {
+    if (value === null) continue
+    if (value < 0) {
+      issues.push(
+        `${name}="${raw}" — отрицательный радиус невалиден: рендерер обнуляет его, и прямоугольник остаётся с острыми углами`,
+      )
+    }
+  }
+
+  // больше половины меньшей стороны — радиус молча ужимается до половины
+  if (width !== null && height !== null && width > 0 && height > 0) {
+    const limit = Math.min(width, height) / 2
+    for (const { name, raw, value } of written) {
+      if (value === null || value < 0) continue
+      if (value > limit) {
+        issues.push(
+          `${name}="${raw}" — больше половины меньшей стороны (${fmt(width)} × ${fmt(height)}, не больше ${fmt(limit)}): радиус молча ужимается`,
+        )
+      }
+    }
+  }
+
+  return issues
+}
+
 const parseAttrs = (chunk) => {
   const attrs = {}
   let m
@@ -84,6 +156,12 @@ export function lintSvg(svgSource) {
         if (attr === 'opacity' && value.trim() === '1') continue
         errors.push(`${message} (${name} ${attr}="${value}")`)
       }
+    }
+
+    // скругление прямоугольника: радиус обязан быть валидным, иначе чашка
+    // наушников внезапно оказывается прямоугольником (находка: знак редактора)
+    if (name === 'rect') {
+      for (const issue of rectRadiusIssues(attrs)) errors.push(issue)
     }
 
     for (const attr of ['fill', 'stroke', 'stop-color', 'color']) {
