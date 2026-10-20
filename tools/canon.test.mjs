@@ -23,6 +23,44 @@ test('CONCEPT §1, §4: full canvas, canonical corner and stroke', () => {
   }
 })
 
+test('cup corners: radius is a valid pill, lint rejects negative and oversized rx/ry', () => {
+  const svg = svgFor('dajet-editor')
+
+  // чашки наушников — «пилюли»: радиус ровно половина меньшей стороны
+  const cups = [...svg.matchAll(/<rect\b([^>]*)>/g)].map((m) => m[1])
+  assert.equal(cups.length, 2, 'в знаке редактора ровно две чашки')
+  for (const cup of cups) {
+    const rx = /rx="([^"]+)"/.exec(cup)
+    const width = Number(/width="([^"]+)"/.exec(cup)[1])
+    const height = Number(/height="([^"]+)"/.exec(cup)[1])
+    assert.ok(rx, `у чашки нет rx: ${cup.trim()}`)
+    assert.ok(Number(rx[1]) > 0, `rx чашки «${rx[1]}» не положителен — отрицательный радиус обнуляется`)
+    assert.ok(
+      Math.abs(Number(rx[1]) - Math.min(width, height) / 2) < 1e-3,
+      `rx чашки «${rx[1]}» — не половина меньшей стороны ${Math.min(width, height) / 2}`,
+    )
+  }
+
+  // старый файл: rx="-44.7379" — отрицательный, рендерер его обнуляет,
+  // чашки выходят прямоугольниками и знак читается как арка
+  const legacy = svg.replace(/rx="[\d.]+"/g, 'rx="-44.7379"')
+  assert.notEqual(legacy, svg, 'подмена радиуса ничего не изменила — тест не проверяет то, что должен')
+  const negative = lintSvg(legacy)
+  assert.equal(negative.ok, false, 'линг пропустил отрицательный rx')
+  assert.match(negative.errors.join('; '), /отрицательный радиус/)
+
+  // радиус больше половины меньшей стороны — тоже невалиден
+  const oversized = svg.replace(/rx="[\d.]+"/g, 'rx="120"')
+  const tooBig = lintSvg(oversized)
+  assert.equal(tooBig.ok, false, 'линг пропустил радиус больше половины меньшей стороны')
+  assert.match(tooBig.errors.join('; '), /больше половины меньшей стороны/)
+
+  // и ни у одного знака нет invalid-радиуса прямо сейчас
+  for (const key of ['dajet-editor', 'dajet-player']) {
+    assert.deepEqual(lintSvg(svgFor(key)).errors, [], `${key}: линг нашёл ошибки`)
+  }
+})
+
 test('all ten records reach every canvas edge with opaque plate color', () => {
   for (const key of ['dajet-editor', 'dajet-player']) {
     const records = readIcns(fs.readFileSync(path.join(SIGNS_DIR, key, 'AppIcon.icns')))
